@@ -27,6 +27,19 @@ unsigned int rpi_connected = false;
 
 int t_loop_1 = 0, t_loop_2 = 0;
 
+struct _ctrl_data{
+  int alt;
+  int x;
+  int y;
+  int en;
+};
+
+struct _ctrl_data ctrl_data = { .alt = 0, \
+                                .x   = 0, \
+                                .y   = 0, \
+                                .en  = 0, \
+                                };
+
 void setupSensor()
 {
   // 1.) Set the accelerometer range
@@ -46,6 +59,36 @@ void setupSensor()
   lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
   //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_500DPS);
   //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_2000DPS);
+}
+
+void packet_ctrl_parser(char *buf, int len) {
+
+  char *field = 0;
+  char *saveptr = buf;
+
+  field = strtok_r(saveptr, ",", &saveptr);
+  //if(strncmp("", field) ) 
+
+  field = strtok_r(saveptr, ",", &saveptr);
+  ctrl_data.alt = atoi(field);
+  
+  field = strtok_r(saveptr, ",", &saveptr);
+  ctrl_data.x = atoi(field);
+ 
+  field = strtok_r(saveptr, ",", &saveptr);
+  ctrl_data.y = atoi(field);
+
+  field = strtok_r(saveptr, ",", &saveptr);
+  ctrl_data.en = atoi(field);
+
+  Serial.print("CTRL: ");
+  Serial.print(ctrl_data.alt);
+  Serial.print(" ");
+  Serial.print(ctrl_data.x);
+  Serial.print(" ");
+  Serial.print(ctrl_data.y);
+  Serial.print(" ");
+  Serial.println(ctrl_data.en);
 }
 
 void setup()
@@ -99,6 +142,8 @@ void loop()
     }
     Serial.printf("UDP packet contents: %s\n", incomingPacket);
 
+    packet_ctrl_parser(incomingPacket, len);
+
     rpi_IP   = Udp.remoteIP();
     rpi_Port = Udp.remotePort();
     rpi_connected = true;
@@ -128,10 +173,10 @@ void loop()
   }
 
   //pwm motor test
-  analogWrite(M1_PIN, 550);
-  analogWrite(M2_PIN, 550);
-  analogWrite(M3_PIN, 550);
-  analogWrite(M4_PIN , 550);
+  analogWrite(M1_PIN, ctrl_data.alt);
+  analogWrite(M2_PIN, ctrl_data.alt);
+  analogWrite(M3_PIN, ctrl_data.alt);
+  analogWrite(M4_PIN, ctrl_data.alt);
 
   //calculating period of loop function
   t_loop_2 = t_loop_1;
