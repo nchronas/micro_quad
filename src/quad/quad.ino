@@ -24,6 +24,9 @@ char incomingPacket[255];  // buffer for incoming packets
 
 unsigned int rpi_IP = 0, rpi_Port = 0;
 unsigned int rpi_connected = false;
+unsigned int tx_rate_cnt = 0;
+
+float quad_r = 0, quad_p = 0, quad_y = 0, quad_h = 0;
 
 int t_loop_1 = 0, t_loop_2 = 0;
 
@@ -133,11 +136,84 @@ void setup()
   analogWrite(M4_PIN, 0);
 
   t_loop_2 = millis();
+  tx_rate_cnt = t_loop_2;
 }
 
 
 void loop()
 {
+
+  sensors_event_t accel, mag, gyro, temp;
+
+  lsm.getEvent(&accel, &mag, &gyro, &temp); 
+
+  AHRS(accel.acceleration.x, \
+       accel.acceleration.y, \
+       accel.acceleration.z, \
+       gyro.gyro.x, \
+       gyro.gyro.y, \
+       gyro.gyro.z, \
+       mag.magnetic.x, \
+       mag.magnetic.y, \
+       mag.magnetic.z \
+       );
+
+  get_rpy(&quad_r, &quad_p, &quad_y, &quad_h);
+
+  //pwm motor test
+  analogWrite(M1_PIN, ctrl_data.alt);
+  analogWrite(M2_PIN, ctrl_data.alt);
+  analogWrite(M3_PIN, ctrl_data.alt);
+  analogWrite(M4_PIN, ctrl_data.alt);
+
+  if(t_loop_2 - tx_rate_cnt > 100) {
+
+    tx_rate_cnt = t_loop_2;
+
+    sprintf(lsm_data, "$MQRPY,%d,%f,%f,%f,%f,*", \
+                              t_loop_2 - t_loop_1, \
+                              quad_r, \
+                              quad_p, \
+                              quad_y, \
+                              quad_h \
+                              );
+
+    sprintf(lsm_data, "$MQSSI,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,*", \
+                              t_loop_2 - t_loop_1, \
+                              (int)1000*accel.acceleration.x, \
+                              (int)1000*accel.acceleration.y, \
+                              (int)1000*accel.acceleration.z, \
+                                        gyro.gyro.x, \
+                                        gyro.gyro.y, \
+                                        gyro.gyro.z, \
+                              (int)1000*mag.magnetic.x, \
+                              (int)1000*mag.magnetic.y, \
+                              (int)1000*mag.magnetic.z \
+                              );
+
+    sprintf(lsm_data, "$MQSRW,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,*", \
+                              t_loop_2 - t_loop_1, \
+                              (int)lsm.accelData.x, \
+                              (int)lsm.accelData.y, \
+                              (int)lsm.accelData.z, \
+                              (int)lsm.gyroData.x, \
+                              (int)lsm.gyroData.y, \
+                              (int)lsm.gyroData.z, \
+                              (int)lsm.magData.x, \
+                              (int)lsm.magData.y, \
+                              (int)lsm.magData.z \
+                              );
+    
+    Serial.println(lsm_data);
+
+    // send back a reply, to the IP address and port we got the packet from
+    if(rpi_connected) {
+      Udp.beginPacket(rpi_IP, rpi_Port);
+      Udp.write(lsm_data);
+      Udp.endPacket();
+    }
+  }
+
   int packetSize = Udp.parsePacket();
   if (packetSize)
   {
@@ -156,48 +232,6 @@ void loop()
     rpi_Port = Udp.remotePort();
     rpi_connected = true;
   }
-
-  sensors_event_t accel, mag, gyro, temp;
-
-  lsm.getEvent(&accel, &mag, &gyro, &temp); 
-  AHRS(accel.acceleration.x, \
-       accel.acceleration.y, \
-       accel.acceleration.z, \
-       gyro.gyro.x, \
-       gyro.gyro.y, \
-       gyro.gyro.z, \
-       mag.magnetic.x, \
-       mag.magnetic.y, \
-       mag.magnetic.z \
-       );
-
-  sprintf(lsm_data, "$MQD,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,*", \
-                          t_loop_2 - t_loop_1, \
-                          (int)lsm.accelData.x, \
-                          (int)lsm.accelData.y, \
-                          (int)lsm.accelData.z, \
-                          (int)lsm.gyroData.x, \
-                          (int)lsm.gyroData.y, \
-                          (int)lsm.gyroData.z, \
-                          (int)lsm.magData.x, \
-                          (int)lsm.magData.y, \
-                          (int)lsm.magData.z \
-                          );
-
-  Serial.println(lsm_data);
-
-  // send back a reply, to the IP address and port we got the packet from
-  if(rpi_connected) {
-    Udp.beginPacket(rpi_IP, rpi_Port);
-    Udp.write(lsm_data);
-    Udp.endPacket();
-  }
-
-  //pwm motor test
-  analogWrite(M1_PIN, ctrl_data.alt);
-  analogWrite(M2_PIN, ctrl_data.alt);
-  analogWrite(M3_PIN, ctrl_data.alt);
-  analogWrite(M4_PIN, ctrl_data.alt);
 
   //calculating period of loop function
   t_loop_1 = t_loop_2;

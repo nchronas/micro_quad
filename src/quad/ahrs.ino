@@ -15,8 +15,6 @@
 #define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
 #define Ki 0.0f
 
-uint32_t count = 0;  // used to control display output rate
-uint32_t delt_t = 0; // used to control display output rate
 float pitch, yaw, roll, heading;
 float deltat = 0.0f;        // integration interval for both filter schemes
 uint32_t lastUpdate = 0;    // used to calculate integration interval
@@ -25,51 +23,6 @@ uint32_t Now = 0;           // used to calculate integration interval
 float abias[3] = {0, 0, 0}, gbias[3] = {0, 0, 0};
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 float eInt[3] = {0.0f, 0.0f, 0.0f}; // vector to hold integral error for Mahony method
-
-
-// Here's a fun function to calculate your heading, using Earth's
-// magnetic field.
-// It only works if the sensor is flat (z-axis normal to Earth).
-// Additionally, you may need to add or subtract a declination
-// angle to get the heading normalized to your location.
-// See: http://www.ngdc.noaa.gov/geomag/declination.shtml
-void printHeading(float hx, float hy)
-{
-  if (hy > 0)
-  {
-    heading = 90 - (atan(hx / hy) * (180 / PI));
-  }
-  else if (hy < 0)
-  {
-    heading = - (atan(hx / hy) * (180 / PI));
-  }
-  else // hy = 0
-  {
-    if (hx < 0) heading = 180;
-    else heading = 0;
-  }
-  
-  Serial.print("Heading: ");
-  Serial.println(heading, 2);
-}
-
-// Another fun function that does calculations based on the
-// acclerometer data. This function will print your LSM9DS0's
-// orientation -- it's roll and pitch angles.
-void printOrientation(float x, float y, float z)
-{
- // float pitch, roll;
-  
-  pitch = atan2(x, sqrt(y * y) + (z * z));
-  roll = atan2(y, sqrt(x * x) + (z * z));
-  pitch *= 180.0 / PI;
-  roll *= 180.0 / PI;
-  
-  Serial.print("Pitch, Roll: ");
-  Serial.print(pitch, 2);
-  Serial.print(", ");
-  Serial.println(roll, 2);
-}
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
 // (see http://www.x-io.co.uk/category/open-source/ for examples and more details)
@@ -263,25 +216,7 @@ void printOrientation(float x, float y, float z)
  
 }
 
-int loop_cnt = 0;
-
-void AHRS(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz) {
-   Now = micros();
-  deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-  lastUpdate = Now;
-  // Sensors x- and y-axes are aligned but magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
-  // This is ok by aircraft orientation standards!  
-  // Pass gyro rate as rad/s
-   MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
- //MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
-
-    // Serial print and/or display at 0.5 s rate independent of data rates
-    loop_cnt++;
-    if (loop_cnt > 10) { // update LCD once per half-second independent of read rate
-      loop_cnt = 0;
-  // Print the heading and orientation for fun!
-    printHeading(mx, my);
-    printOrientation(ax, ay, az);
+void q_to_rpy() {
 
   // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
   // In this coordinate system, the positive z-axis is down toward Earth. 
@@ -300,24 +235,26 @@ void AHRS(float ax, float ay, float az, float gx, float gy, float gz, float mx, 
     yaw   *= 180.0f / PI; 
     yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
     roll  *= 180.0f / PI;
-
-    Serial.print("ax = "); Serial.print((int)1000*ax);  
-    Serial.print(" ay = "); Serial.print((int)1000*ay); 
-    Serial.print(" az = "); Serial.print((int)1000*az); Serial.println(" mg");
-    Serial.print("gx = "); Serial.print( gx, 2); 
-    Serial.print(" gy = "); Serial.print( gy, 2); 
-    Serial.print(" gz = "); Serial.print( gz, 2); Serial.println(" deg/s");
-    Serial.print("mx = "); Serial.print( (int)1000*mx); 
-    Serial.print(" my = "); Serial.print( (int)1000*my); 
-    Serial.print(" mz = "); Serial.print( (int)1000*mz); Serial.println(" mG");
-    
-     
-    Serial.print("Yaw, Pitch, Roll: ");
-    Serial.print(yaw, 2);
-    Serial.print(", ");
-    Serial.print(pitch, 2);
-    Serial.print(", ");
-    Serial.println(roll, 2);
-
-    }
 }
+
+void AHRS(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz) {
+
+   Now = micros();
+   deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+   lastUpdate = Now;
+   // Sensors x- and y-axes are aligned but magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
+   // This is ok by aircraft orientation standards!  
+   // Pass gyro rate as rad/s
+   MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+   //MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+   q_to_rpy();
+
+}
+
+void get_rpy(float *r, float *p, float *y, float *h) {
+  *r = roll;
+  *p = pitch;
+  *y = yaw;
+  *h = heading;
+}
+
