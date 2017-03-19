@@ -10,6 +10,8 @@ unsigned int localUdpPort = 4210;  // local port to listen on
 char incomingPacket[255];  // buffer for incoming packets
 char  replyPacekt[] = "Hi there! Got the message :-)";  // a reply string to send back
 
+unsigned int rpi_IP = 0, rpi_Port = 0;
+unsigned int rpi_connected = false;
 
 void setup()
 {
@@ -44,9 +46,16 @@ void loop()
     }
     Serial.printf("UDP packet contents: %s\n", incomingPacket);
 
-    // send back a reply, to the IP address and port we got the packet from
-    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    rpi_IP   = Udp.remoteIP();
+    rpi_Port = Udp.remotePort();
+    rpi_connected = true;
+  }
+
+  // send back a reply, to the IP address and port we got the packet from
+  if(rpi_connected) {
+    Udp.beginPacket(rpi_IP, rpi_Port);
     Udp.write(replyPacekt);
     Udp.endPacket();
   }
+  delay(1000);
 }
