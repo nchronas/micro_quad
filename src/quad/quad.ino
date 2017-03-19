@@ -59,6 +59,14 @@ void setupSensor()
   lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
   //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_500DPS);
   //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_2000DPS);
+
+  //aRes = aScale == A_SCALE_16G ? 16.0 / 32768.0 : 
+  //(((float) aScale + 1.0) * 2.0) / 32768.0;
+
+  //gRes = 245.0 / 32768.0;
+
+  //mRes = mScale == M_SCALE_2GS ? 2.0 / 32768.0 : 
+  //(float) (mScale << 2) / 32768.0;
 }
 
 void packet_ctrl_parser(char *buf, int len) {
@@ -124,7 +132,7 @@ void setup()
   analogWrite(M3_PIN, 0);
   analogWrite(M4_PIN, 0);
 
-  t_loop_1 = millis();
+  t_loop_2 = millis();
 }
 
 
@@ -149,7 +157,20 @@ void loop()
     rpi_connected = true;
   }
 
-  lsm.read();
+  sensors_event_t accel, mag, gyro, temp;
+
+  lsm.getEvent(&accel, &mag, &gyro, &temp); 
+  AHRS(accel.acceleration.x, \
+       accel.acceleration.y, \
+       accel.acceleration.z, \
+       gyro.gyro.x, \
+       gyro.gyro.y, \
+       gyro.gyro.z, \
+       mag.magnetic.x, \
+       mag.magnetic.y, \
+       mag.magnetic.z \
+       );
+
   sprintf(lsm_data, "$MQD,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,*", \
                           t_loop_2 - t_loop_1, \
                           (int)lsm.accelData.x, \
@@ -179,9 +200,8 @@ void loop()
   analogWrite(M4_PIN, ctrl_data.alt);
 
   //calculating period of loop function
-  t_loop_2 = t_loop_1;
-  t_loop_1 = millis();
+  t_loop_1 = t_loop_2;
+  t_loop_2 = millis();
 
-  delay(1000);
 }
 
