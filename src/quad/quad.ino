@@ -6,6 +6,11 @@
 #include <Adafruit_Sensor.h>  // not used in this demo but required!
 #include "config.h"
 
+#define M1_PIN 12
+#define M2_PIN 13
+#define M3_PIN 14
+#define M4_PIN 15
+
 // i2c
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
 char lsm_data[100];
@@ -70,6 +75,12 @@ void setup()
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 
+  //pwm motor init
+  analogWrite(M1_PIN, 0);
+  analogWrite(M2_PIN, 0);
+  analogWrite(M3_PIN, 0);
+  analogWrite(M4_PIN, 0);
+
   t_loop_1 = millis();
 }
 
@@ -106,6 +117,7 @@ void loop()
                           (int)lsm.magData.y, \
                           (int)lsm.magData.z \
                           );
+
   Serial.println(lsm_data);
 
   // send back a reply, to the IP address and port we got the packet from
@@ -115,8 +127,16 @@ void loop()
     Udp.endPacket();
   }
 
+  //pwm motor test
+  analogWrite(M1_PIN, 550);
+  analogWrite(M2_PIN, 550);
+  analogWrite(M3_PIN, 550);
+  analogWrite(M4_PIN , 550);
+
+  //calculating period of loop function
   t_loop_2 = t_loop_1;
   t_loop_1 = millis();
 
   delay(1000);
 }
+
