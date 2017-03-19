@@ -2,8 +2,8 @@
 #include <WiFiUdp.h>
 #include "config.h"
 
-const char* ssid = "SSID";
-const char* password = "PSWD";
+const char* ssid = SSID;
+const char* password = PSWD;
 
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  // local port to listen on
