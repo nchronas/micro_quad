@@ -15,6 +15,11 @@
 #define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
 #define Ki 0.0f
 
+// i2c
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
+
+sensors_event_t accel, mag, gyro, temp;
+
 float pitch, yaw, roll, heading;
 float deltat = 0.0f;        // integration interval for both filter schemes
 uint32_t lastUpdate = 0;    // used to calculate integration interval
@@ -247,7 +252,6 @@ void AHRS(float ax, float ay, float az, float gx, float gy, float gz, float mx, 
    // Pass gyro rate as rad/s
    MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
    //MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
-   q_to_rpy();
 
 }
 
@@ -256,5 +260,100 @@ void get_rpy(float *r, float *p, float *y, float *h) {
   *p = pitch;
   *y = yaw;
   *h = heading;
+}
+
+void get_quaternion(float *quat) {
+  quat[0] = q[0];
+  quat[1] = q[1];
+  quat[2] = q[2];
+  quat[3] = q[3];
+}
+
+void get_raw(int *ax, int *ay, int *az, int *gx, int *gy, int *gz, int *mx, int *my, int *mz) {
+
+  *ax = lsm.accelData.y;
+  *ay = lsm.accelData.y;
+  *az = lsm.accelData.z;
+  *gx = lsm.gyroData.x;
+  *gy = lsm.gyroData.y;
+  *gz = lsm.gyroData.z;
+  *mx = lsm.magData.x;
+  *my = lsm.magData.y;
+  *mz = lsm.magData.z;
+}
+
+void get_norm(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {
+
+  *ax = accel.acceleration.x;
+  *ay = accel.acceleration.y;
+  *az = accel.acceleration.z;
+  *gx = gyro.gyro.x;
+  *gy = gyro.gyro.y;
+  *gz = gyro.gyro.z;
+  *mx = mag.magnetic.x;
+  *my = mag.magnetic.y;
+  *mz = mag.magnetic.z;
+}
+
+void setupSensor()
+{
+  // 1.) Set the accelerometer range
+  lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_2G);
+  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_4G);
+  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_6G);
+  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_8G);
+  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_16G);
+  
+  // 2.) Set the magnetometer sensitivity
+  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);
+  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_4GAUSS);
+  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_8GAUSS);
+  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_12GAUSS);
+
+  // 3.) Setup the gyroscope
+  lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
+  //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_500DPS);
+  //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_2000DPS);
+
+  //aRes = aScale == A_SCALE_16G ? 16.0 / 32768.0 : 
+  //(((float) aScale + 1.0) * 2.0) / 32768.0;
+
+  //gRes = 245.0 / 32768.0;
+
+  //mRes = mScale == M_SCALE_2GS ? 2.0 / 32768.0 : 
+  //(float) (mScale << 2) / 32768.0;
+}
+
+void imu_init() {
+  // Try to initialise and warn if we couldn't detect the chip
+  if (!lsm.begin())
+  {
+    Serial.println("Oops ... unable to initialize the LSM9DS0. Check your wiring!");
+    while (1);
+  }
+  Serial.println("Found LSM9DS0 9DOF");
+  Serial.println("");
+  Serial.println("");
+
+  setupSensor();
+}
+
+void imu_update_pos() {
+
+  lsm.getEvent(&accel, &mag, &gyro, &temp); 
+
+  AHRS(accel.acceleration.x, \
+       accel.acceleration.y, \
+       accel.acceleration.z, \
+       gyro.gyro.x, \
+       gyro.gyro.y, \
+       gyro.gyro.z, \
+       mag.magnetic.x, \
+       mag.magnetic.y, \
+       mag.magnetic.z \
+       );
+
+  q_to_rpy();
+
 }
 
