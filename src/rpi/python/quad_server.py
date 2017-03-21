@@ -46,7 +46,7 @@ if __name__ == '__main__':
     print "UDP target port:", UDP_PORT
     print "message:", MESSAGE
 
-
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("0.0.0.0", UDP_PORT))
     udp_ser = threading.Thread(target=udp_server, args=())
     udp_ser.daemon = True
