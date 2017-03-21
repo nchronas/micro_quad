@@ -2,10 +2,42 @@
 <html>
 <head>
     <title>Flask-SocketIO Test</title>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.js"></script>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
+
+            var data = [ 0 ];
+
+            function drawLineChart() {
+
+                  // Create the chart.js data structure using 'labels' and 'data'
+                  var tempData = {
+                    labels : labels,
+                    datasets : [{
+                        fillColor             : "rgba(151,187,205,0.2)",
+                        strokeColor           : "rgba(151,187,205,1)",
+                        pointColor            : "rgba(151,187,205,1)",
+                        pointStrokeColor      : "#fff",
+                        pointHighlightFill    : "#fff",
+                        pointHighlightStroke  : "rgba(151,187,205,1)",
+                        data                  : data
+                    }]
+                  };
+
+                  // Get the context of the canvas element we want to select
+                  var ctx = document.getElementById("myLineChart").getContext("2d");
+
+                  // Instantiate a new chart
+                  var myLineChart = new Chart(ctx).Line(tempData, {
+                    //bezierCurve: false
+                  });
+            }
+
+            drawLineChart();
+
+
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
             // Socket.IO will multiplex all those connections on a single
@@ -31,6 +63,11 @@
             // section of the page.
             socket.on('my_response', function(msg) {
                 $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                data.push(1);
+                if(data.length > 50) {
+                    data.shift();
+                }
+                drawLineChart();
             });
 
             // Handlers for the different forms in the page.
@@ -55,6 +92,7 @@
     <form id="disconnect" method="POST" action="#">
         <input type="submit" value="Disconnect">
     </form>
+    <canvas id="myChart" width="740" height="200"></canvas>
     <h2>Receive:</h2>
     <div id="log"></div>
 </body>
