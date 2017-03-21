@@ -11,6 +11,7 @@ sock = socket.socket(socket.AF_INET, # Internet
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
+app.debug = True
 socketio = SocketIO(app)
 
 def tst_udp_server():
