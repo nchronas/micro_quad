@@ -48,9 +48,14 @@ if __name__ == '__main__':
 
     sock.bind(("0.0.0.0", UDP_PORT))
     udp_ser = threading.Thread(target=udp_server, args=())
+    udp_ser.daemon = True
     udp_ser.start()
 
     udp_tst_ser = threading.Thread(target=tst_udp_server, args=())
+    udp_tst_ser.daemon = True
     udp_tst_ser.start()
 
-    socketio.run(app, host='0.0.0.0', port=8080)
+    try:
+        socketio.run(app, host='0.0.0.0', port=8080)
+    except (KeyboardInterrupt, SystemExit):
+        socketio.stop()
