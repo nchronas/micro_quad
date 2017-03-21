@@ -23,8 +23,8 @@ def udp_server():
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         print "received message:", data
-        dict_out = {'roll': data}
-        emit('my response', dict_out)
+        dict_out = {'data': "Hello from UDP"}
+        socketio.emit('my response', dict_out, namespace='/test')
 
 
 @app.route('/')
@@ -32,9 +32,16 @@ def index():
     '''View test index html.'''
     return render_template('index.html')
 
-@socketio.on('my event')
+@socketio.on('connect', namespace='/test')
+def on_connect_test():
+    print "Socket Connected"
+    emit('my_response', {'data': 'Hello my friend'})
+
+
+@socketio.on('my_event', namespace='/test')
 def test_message(message):
-    emit('my response', {'data': 'got it!'})
+    print "Received socket msg", message
+    emit('my_response', {'data': 'got it!'})
 
 if __name__ == '__main__':
 
