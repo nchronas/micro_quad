@@ -30,7 +30,7 @@ def udp_server():
 @app.route('/')
 def index():
     '''View test index html.'''
-    return render_template('../html/index.html')
+    return render_template('index.html')
 
 @socketio.on('my event')
 def test_message(message):
