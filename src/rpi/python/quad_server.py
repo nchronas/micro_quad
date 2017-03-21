@@ -32,6 +32,11 @@ def index():
     '''View test index html.'''
     return render_template('index.html')
 
+@app.route('/canvasjs.min.js')
+def index():
+    '''View test index html.'''
+    return app.send_static_file('canvasjs.min.js')
+
 @socketio.on('connect', namespace='/test')
 def on_connect_test():
     print "Socket Connected"
