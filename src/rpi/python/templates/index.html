@@ -89,6 +89,11 @@
                 socket.emit('my_event', {data: $('#emit_data').val()});
                 return false;
             });
+
+            $('form#tx_rpy').submit(function(event) {
+                socket.emit('my_event', {data: 'toggle_tx'});
+                return false;
+            });
         });
     </script>
 </head>
@@ -101,8 +106,8 @@
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
     </form>
-    <form id="disconnect" method="POST" action="#">
-        <input type="submit" value="Disconnect">
+    <form id="tx_rpy" method="POST" action="#">
+        <input type="submit" value="tx_rpy">
     </form>
     <div id="chartContainer" style="height: 300; width: 50%;"></div>
     <h2>Receive:</h2>

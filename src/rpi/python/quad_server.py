@@ -15,21 +15,23 @@ app.config['SECRET_KEY'] = 'secret!'
 app.debug = True
 socketio = SocketIO(app)
 
+tx_flag = False
 
 def quad_response_parser(data):
     temp = data.split(',')
     if len(temp) < 2:
         dict_out = { }
-    else if temp[0] == '$MQRPY':
+    elif temp[0] == '$MQRPY':
         dict_out = { 'r' : temp[2], 'p' : temp[3],'y' : temp[4], }
-    else
+    else:
         dict_out = { }
     return dict_out
 
 
 def tst_udp_server():
     while True:
-        sock.sendto("$MQRPY*\n", (UDP_IP, UDP_PORT))
+        if tx_flag:
+            sock.sendto("$MQRPY*\n", (UDP_IP, UDP_PORT))
         sleep(0.1)
 
 def udp_server():
@@ -64,6 +66,12 @@ def on_connect_test():
 @socketio.on('my_event', namespace='/test')
 def test_message(message):
     print "Received socket msg", message
+    if message.data == 'toggle_tx':
+        if tx_flag:
+            tx_flag = False
+        else:
+            tx_flag = True
+        print "Toggling  UDP Tx to: ", tx_flag
     emit('my_response', {'data': 'got it!'})
 
 if __name__ == '__main__':
