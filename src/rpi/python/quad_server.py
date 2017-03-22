@@ -17,14 +17,14 @@ socketio = SocketIO(app)
 def tst_udp_server():
     while True:
         sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
-        sleep(1)
+        sleep(0.1)
 
 def udp_server():
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         print "received message:", data
         dict_out = {'data': "Hello from UDP"}
-        socketio.emit('my response', dict_out, namespace='/test')
+        socketio.emit('my_response', dict_out, namespace='/test')
 
 
 @app.route('/')
@@ -33,9 +33,14 @@ def index():
     return render_template('index.html')
 
 @app.route('/canvasjs.min.js')
-def index():
+def plot():
     '''View test index html.'''
     return app.send_static_file('canvasjs.min.js')
+
+@app.route('/socket.io.min.js')
+def sockets():
+    '''View test index html.'''
+    return app.send_static_file('socket.io.min.js')
 
 @socketio.on('connect', namespace='/test')
 def on_connect_test():
