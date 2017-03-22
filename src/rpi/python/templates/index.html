@@ -77,8 +77,9 @@
             // to the client. The data is then displayed in the "Received"
             // section of the page.
             socket.on('my_response', function(msg) {
-                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
-                updateChart(10);
+                //$('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                var obj = JSON.parse(msg.data)
+                updateChart(obj.r);
             });
 
             // Handlers for the different forms in the page.

@@ -5,6 +5,7 @@ import socket
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 from time import sleep
+import json
 
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -14,17 +15,29 @@ app.config['SECRET_KEY'] = 'secret!'
 app.debug = True
 socketio = SocketIO(app)
 
+
+def quad_response_parser(data):
+    temp = data.split(',')
+    if len(temp) < 2:
+        dict_out = { }
+    else if temp[0] == '$MQRPY':
+        dict_out = { 'r' : temp[2], 'p' : temp[3],'y' : temp[4], }
+    else
+        dict_out = { }
+    return dict_out
+
+
 def tst_udp_server():
     while True:
-        sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
+        sock.sendto("$MQRPY*\n", (UDP_IP, UDP_PORT))
         sleep(0.1)
 
 def udp_server():
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-        print "received message:", data
-        dict_out = {'data': "Hello from UDP"}
-        socketio.emit('my_response', dict_out, namespace='/test')
+        dict_out = quad_response_parser(data)
+        print "received message:", data, dict_out
+        socketio.emit('my_response', json.dumps(dict_out), namespace='/test')
 
 
 @app.route('/')

@@ -68,7 +68,7 @@ void loop()
 
   comms_check_new_packet_arrival();
 
-  if(t_loop_2 - tx_rate_cnt > 100) {
+  if(t_loop_2 - tx_rate_cnt > 1000) {
     tx_rate_cnt = t_loop_2;
 
     packet_response_handler(2, lsm_data);

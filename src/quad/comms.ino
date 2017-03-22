@@ -41,12 +41,12 @@ void comms_init() {
 
 void incoming_packet_parser(char *buf, int len, int *cmd) {
 
-  if(strncmp(buf, "$MQJOY", 6) > 0) {
+  if(strncmp(buf, "$MQJOY", 6) == 0) {
     packet_joy_parser(buf);
     *cmd = REQ_JOY;
-  } else if(strncmp(buf, "$MQRPY", 6) > 0) {
+  } else if(strncmp(buf, "$MQRPY", 6) == 0) {
     *cmd = REQ_RPY;
-  } else if(strncmp(buf, "$MQQUA", 6) > 0) {
+  } else if(strncmp(buf, "$MQQUA", 6) == 0) {
     *cmd = REQ_QUA;
   } else {
     *cmd = REQ_NOP;
