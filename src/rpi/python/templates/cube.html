@@ -1,0 +1,122 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Three.js Test</title>
+    <script type="text/javascript" src="/Three.js"></script>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+
+            var roll = 0, pitch = 0, yaw = 0;
+            
+            var scene, camera, renderer;
+
+            var WIDTH  = window.innerWidth;
+            var HEIGHT = window.innerHeight;
+
+            function init() {
+                scene = new THREE.Scene();
+
+                initCube();
+                initCamera();
+                initRenderer();
+
+                document.body.appendChild(renderer.domElement);
+            }
+
+            function initCamera() {
+                camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT, 1, 10);
+                camera.position.set(0, 3.5, 5);
+                camera.lookAt(scene.position);
+            }
+
+            function initRenderer() {
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(WIDTH, HEIGHT);
+            }
+
+            function initCube() {
+                cube = new THREE.Mesh(new THREE.CubeGeometry(2, 2, 2), new THREE.MeshNormalMaterial());
+                scene.add(cube);
+            }
+
+            function rotateCube() {
+                cube.rotation.x -= roll;
+                cube.rotation.y -= pitch;
+                cube.rotation.z -= yaw;
+            }
+
+            function render() {
+                requestAnimationFrame(render);
+                rotateCube();
+                renderer.render(scene, camera);
+            }
+
+            init();
+            render();
+ 
+            // Use a "/test" namespace.
+            // An application can open a connection on multiple namespaces, and
+            // Socket.IO will multiplex all those connections on a single
+            // physical channel. If you don't care about multiple channels, you
+            // can set the namespace to an empty string.
+            namespace = '/test';
+
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+
+            // Event handler for server sent data.
+            // The callback function is invoked whenever the server emits data
+            // to the client. The data is then displayed in the "Received"
+            // section of the page.
+            socket.on('my_response', function(msg) {
+                //$('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                var obj = JSON.parse(msg.data)
+                roll = parseInt(obj.r);
+                pitch = parseInt(obj.p);
+                yaw = parseInt(obj.y);
+                render();
+            });
+
+            // Handlers for the different forms in the page.
+            // These accept data from the user and send it to the server in a
+            // variety of ways
+            $('form#emit').submit(function(event) {
+                socket.emit('my_event', {data: $('#emit_data').val()});
+                return false;
+            });
+
+            $('form#tx_rpy').submit(function(event) {
+                socket.emit('my_event', {data: 'toggle_tx'});
+                return false;
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Flask-SocketIO Test</h1>
+    <p>Async mode is: <b>{{ async_mode }}</b></p>
+    <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
+    <h2>Send:</h2>
+    <form id="emit" method="POST" action='#'>
+        <input type="text" name="emit_data" id="emit_data" placeholder="Message">
+        <input type="submit" value="Echo">
+    </form>
+    <form id="tx_rpy" method="POST" action="#">
+        <input type="submit" value="tx_rpy">
+    </form>
+    <div id="container"></div>
+    <h2>Receive:</h2>
+    <div id="log"></div>
+</body>
+</html>

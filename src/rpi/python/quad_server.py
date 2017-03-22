@@ -47,6 +47,11 @@ def index():
     '''View test index html.'''
     return render_template('index.html')
 
+@app.route('/cube')
+def index():
+    '''View test index html.'''
+    return render_template('cube.html')
+
 @app.route('/canvasjs.min.js')
 def plot():
     '''View test index html.'''
@@ -56,6 +61,12 @@ def plot():
 def sockets():
     '''View test index html.'''
     return app.send_static_file('socket.io.min.js')
+
+@app.route('/Three.js')
+def three():
+    '''View test index html.'''
+    return app.send_static_file('Three.js')
+
 
 @socketio.on('connect', namespace='/test')
 def on_connect_test():
