@@ -33,7 +33,7 @@ controller.init()
 tx_flag = False
 
 def joy_event_server():
-g
+
     # Left hat
     AXIS_X = 0
     AXIS_Y = 1
@@ -87,6 +87,11 @@ def index():
 def cube():
     '''View test index html.'''
     return render_template('cube.html')
+
+@app.route('/joy')
+def cube():
+    '''View test index html.'''
+    return render_template('joy.html')
 
 @app.route('/canvasjs.min.js')
 def plot():
