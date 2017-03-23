@@ -8,16 +8,35 @@
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
 
-            var dps = []; // dataPoints
+            var dps_r = []; // dataPoints
+            var dps_p = [];
+            var dps_y = [];
 
             var chart = new CanvasJS.Chart("chartContainer",{
                 title :{
                     text: "Live Random Data"
                 },          
                 data: [{
+                    showInLegend: true,
+                    name: "Roll",
+                    color: "#20B2AA",
                     type: "line",
-                    dataPoints: dps 
-                }]
+                    dataPoints: dps_r 
+                },
+                {
+                    showInLegend: true,
+                    name: "Pitch",
+                    color: "#F08080",
+                    type: "line",
+                    dataPoints: dps_p
+                },
+                {
+                    showInLegend: true,
+                    name: "yaw",
+                    type: "line",
+                    dataPoints: dps_y
+                }
+                ]
             });
 
             var xVal = 0;
@@ -28,7 +47,15 @@
 
                 for (var j = 0; j < dataLength; j++) {   
                     yVal = 0;
-                    dps.push({
+                    dps_r.push({
+                        x: j,
+                        y: null
+                    });
+                    dps_p.push({
+                        x: j,
+                        y: null
+                    });
+                    dps_y.push({
                         x: j,
                         y: null
                     });
@@ -37,16 +64,27 @@
                 chart.render(); 
             };
 
-            var updateChart = function (val) {
+            var updateChart = function (r, p, y) {
 
                 xVal++;
-                dps.push({
+                dps_r.push({
                     x: xVal,
-                    y: val
+                    y: r
                 });
 
+                dps_p.push({
+                    x: xVal,
+                    y: p
+                });
 
-                dps.shift();                
+                dps_y.push({
+                    x: xVal,
+                    y: y
+                });
+
+                dps_r.shift();
+                dps_p.shift();  
+                dps_y.shift();                
                 
                 chart.render();     
             };
@@ -82,7 +120,9 @@
                     typeof msg.data.y === 'undefined') {
                     console.log('name property is missing');
                 } else {
-                    updateChart(parseInt(msg.data.p));
+                    updateChart(parseInt(msg.data.r),
+                                parseInt(msg.data.p), 
+                                parseInt(msg.data.y) );
                 }
                 console.log("Server data: " + msg.data);
             });
