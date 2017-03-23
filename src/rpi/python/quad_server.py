@@ -8,7 +8,7 @@ import socket
 from flask import Flask, render_template
 import socketio
 from time import sleep
-
+import pygame
 import eventlet.wsgi
 
 sock = socket.socket(socket.AF_INET, # Internet
@@ -22,7 +22,32 @@ app.debug = True
 app.wsgi_app = socketio.Middleware(sio, app.wsgi_app)
 app.config['SECRET_KEY'] = 'secret!'
 
+controller = pygame.joystick.Joystick(0)
+controller.init()
+
 tx_flag = False
+
+def you_event_server():
+    while True:
+        axis[AXIS_X] = -1
+        axis[AXIS_Y] = -1
+
+        # retrieve any events ...
+        for event in pygame.event.get():
+            if event.type == pygame.JOYAXISMOTION:
+                axis[event.axis] = round(event.value,2)
+            elif event.type == pygame.JOYBUTTONDOWN:
+                button[event.button] = True
+            elif event.type == pygame.JOYBUTTONUP:
+                button[event.button] = False
+
+        rot_x = axis[AXIS_X]
+        rot_y = axis[AXIS_Y]
+
+        dict_out = { 'joy_x' : rot_x, 'joy_y' : rot_y}
+
+        sio.emit('my response', {'data': dict_out}, room=sid, namespace='/test')
+        eventlet.sleep(0.5)
 
 def quad_response_parser(data):
     temp = data.split(',')
