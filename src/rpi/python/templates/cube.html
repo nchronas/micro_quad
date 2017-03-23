@@ -81,11 +81,18 @@
             // section of the page.
             socket.on('my_response', function(msg) {
                 //$('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
-                var obj = JSON.parse(msg.data)
-                roll = parseInt(obj.r);
-                pitch = parseInt(obj.p);
-                yaw = parseInt(obj.y)gi;
-                render();
+                if (typeof msg.data.r === 'undefined' &&
+                    typeof msg.data.p === 'undefined' &&
+                    typeof msg.data.y === 'undefined') {
+                    console.log('name property is missing');
+                } else {
+                    roll = parseInt(msg.data.r);
+                    pitch = parseInt(msg.data.p);
+                    yaw = parseInt(msg.data.y);
+                    render();
+                }
+                console.log("Server data: " + msg.data);
+
             });
 
             // Handlers for the different forms in the page.

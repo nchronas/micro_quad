@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+import eventlet
+eventlet.monkey_patch()
+
 import threading
 import os
 import socket
 from flask import Flask, render_template
 import socketio
 from time import sleep
-import eventlet
+
 import eventlet.wsgi
 
 sock = socket.socket(socket.AF_INET, # Internet
@@ -37,19 +40,17 @@ def tst_udp_server():
     while True:
         if tx_flag:
             sock.sendto("$MQRPY*\n", (UDP_IP, UDP_PORT))
-        #sleep(0.1)
-        eventlet.sleep(1)
+        eventlet.sleep(0.5)
 
 def background_thread():
     """Example of how to send server generated events to clients."""
     count = 0
     while True:
-        #sio.sleep(10)
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         dict_out = quad_response_parser(data)
         count += 1
         print "received message:", data, dict_out
-        sio.emit('my_response', {'data': 'Server generated event'}, namespace='/test')
+        sio.emit('my_response', {'data': dict_out}, namespace='/test')
 
 @app.route('/')
 def index():
@@ -110,13 +111,11 @@ if __name__ == '__main__':
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("0.0.0.0", UDP_PORT))
 
-    #udp_tst_ser = threading.Thread(target=tst_udp_server, args=())
-    #udp_tst_ser.daemon = True
-    #udp_tst_ser.start()
+    udp_inc_ser = threading.Thread(target=background_thread, args=())
+    udp_inc_ser.daemon = True
+    udp_inc_ser.start()
 
     eventlet.spawn(tst_udp_server)
-    #eventlet.spawn(background_thread)
-    #thread = sio.start_background_task(background_thread)
 
     #try:
     eventlet.wsgi.server(eventlet.listen(('', 8080)), app)

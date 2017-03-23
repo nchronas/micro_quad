@@ -77,9 +77,14 @@
             // to the client. The data is then displayed in the "Received"
             // section of the page.
             socket.on('my_response', function(msg) {
-                //$('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
-
-                updateChart(1);
+                if (typeof msg.data.r === 'undefined' &&
+                    typeof msg.data.p === 'undefined' &&
+                    typeof msg.data.y === 'undefined') {
+                    console.log('name property is missing');
+                } else {
+                    updateChart(parseInt(msg.data.p));
+                }
+                console.log("Server data: " + msg.data);
             });
 
             // Handlers for the different forms in the page.
