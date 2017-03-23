@@ -42,8 +42,8 @@
             }
 
             function rotateCube() {
-                cube.rotation.x = roll * (Math.PI/180);
-                cube.rotation.y = pitch * (Math.PI/180);
+                cube.rotation.y = roll * (Math.PI/180);
+                cube.rotation.x = pitch * (Math.PI/180);
                 cube.rotation.z = yaw * (Math.PI/180);
             }
 
@@ -81,15 +81,18 @@
             // section of the page.
             socket.on('my_response', function(msg) {
                 //$('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
-                if (typeof msg.data.r === 'undefined' &&
-                    typeof msg.data.p === 'undefined' &&
-                    typeof msg.data.y === 'undefined') {
-                    console.log('name property is missing');
-                } else {
+                if (typeof msg.data.r === 'string' &&
+                    typeof msg.data.p === 'string' &&
+                    typeof msg.data.y === 'string') {
+                    
                     roll = parseInt(msg.data.r);
                     pitch = parseInt(msg.data.p);
                     yaw = parseInt(msg.data.y);
                     render();
+                    
+                } else {
+                    
+                    console.log('name property is missing');
                 }
                 console.log("Server data: " + msg.data);
 

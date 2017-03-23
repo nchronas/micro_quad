@@ -9,14 +9,18 @@
         $(document).ready(function() {
 
             var dps =   [
-                        { y: -1 },
-                        { y: -1 },        
-                        { y: -1 }        
+                        {label: "Altitude", y: -1 },
+                        {label: "Roll", y: -1 },        
+                        {label: "Pitch", y: -1 }        
                         ];
 
             var chart = new CanvasJS.Chart("chartContainer",{
                 title :{
                     text: "Live Random Data"
+                },
+                axisY:{
+                    minimum: -1,
+                    maximum:  1,
                 },          
                 data: [{
                     showInLegend: true,
@@ -28,18 +32,15 @@
             });
 
             var initChart = function () {
-
                 chart.render(); 
             };
 
-            var updateChart = function (a, r, yp) {
+            var updateChart = function (a, r, p) {
 
-                dps =   [
-                        { y: a },
-                        { y: r },        
-                        { y: p }        
-                        ];               
-                
+                dps[0].y = a ;
+                dps[1].y = r ;
+                dps[2].y = p ;
+
                 chart.render();     
             };
 
@@ -61,7 +62,7 @@
             // The callback function is invoked when a connection with the
             // server is established.
             socket.on('connect', function() {
-                socket.emit('my_event', {data: 'I\'m connected!'});
+                socket.emit('my_event', {data: 'joy_page'});
             });
 
             // Event handler for server sent data.
@@ -69,18 +70,18 @@
             // to the client. The data is then displayed in the "Received"
             // section of the page.
             socket.on('my_response', function(msg) {
-                if (typeof msg.data.a === 'undefined' &&
-                    typeof msg.data.r === 'undefined' &&
-                    typeof msg.data.p === 'undefined') {
-                    console.log('name property is missing');
+                if (typeof msg.data.joy_a === 'number' &&
+                    typeof msg.data.joy_x === 'number' &&
+                    typeof msg.data.joy_y === 'number') {
+                    
+                    updateChart(parseFloat(msg.data.joy_a),
+                                parseFloat(msg.data.joy_x), 
+                                parseFloat(msg.data.joy_y) );
                 } else {
-                    updateChart(parseInt(msg.data.r),
-                                parseInt(msg.data.p), 
-                                parseInt(msg.data.y) );
+                    
+                    console.log('name property is missing');
                 }
-                updateChart(11,
-                                22, 
-                                46);
+
                 console.log("Server data: " + msg.data);
             });
 

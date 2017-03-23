@@ -15,6 +15,10 @@
             var chart = new CanvasJS.Chart("chartContainer",{
                 title :{
                     text: "Live Random Data"
+                },
+                axisY:{
+                    minimum: -180,
+                    maximum:  180,
                 },          
                 data: [{
                     showInLegend: true,
@@ -107,7 +111,7 @@
             // The callback function is invoked when a connection with the
             // server is established.
             socket.on('connect', function() {
-                socket.emit('my_event', {data: 'I\'m connected!'});
+                socket.emit('my_event', {data: 'plot_page'});
             });
 
             // Event handler for server sent data.
@@ -139,6 +143,11 @@
                 socket.emit('my_event', {data: 'toggle_tx'});
                 return false;
             });
+
+            $('form#tx_rate').submit(function(event) {
+                socket.emit('my_event', {data: 'rate_tx', rate: $('#tx_rate_data').val()});
+                return false;
+            });
         });
     </script>
 </head>
@@ -150,6 +159,10 @@
     <form id="emit" method="POST" action='#'>
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
+    </form>
+    <form id="tx_rate" method="POST" action='#'>
+        <input type="text" name="tx_rate_data" id="tx_rate_data" placeholder="Message">
+        <input type="submit" value="rate">
     </form>
     <form id="tx_rpy" method="POST" action="#">
         <input type="submit" value="tx_rpy">

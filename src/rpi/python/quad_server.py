@@ -31,24 +31,45 @@ controller = pygame.joystick.Joystick(0)
 controller.init()
 
 tx_flag = False
+tx_rate = 0.1
+
+tx_page = ''
 
 def joy_event_server():
+    global tx_page
 
-    # Left hat
-    AXIS_X = 0
-    AXIS_Y = 1
+    # Left stick
+    AXIS_A = 1
+
+    #right stick
+    AXIS_X = 2
+    AXIS_Y = 3
+
+    BUT_ST = 4
 
     while True:
         pygame.event.get()
-        rot_x = controller.get_axis( AXIS_X )
-        rot_y = controller.get_axis( AXIS_Y )
+        mq_a = controller.get_axis( AXIS_A )
+        mq_x = controller.get_axis( AXIS_X )
+        mq_y = controller.get_axis( AXIS_Y )
 
-        #controller.get_button( 1 ) # X
-        dict_out = { 'joy_x' : rot_x, 'joy_y' : rot_y}
+        mq_s = controller.get_button( BUT_ST ) # X
+
+        dict_out = { 'joy_a' : mq_a,
+                     'joy_x' : mq_x, 
+                     'joy_y' : mq_y, 
+                     'joy_s' : mq_s }
+
+        #normalize()
 
         print "Joystick: ", dict_out
-        sio.emit('my response', {'data': dict_out}, room=sid, namespace='/test')
-        eventlet.sleep(0.5)
+        sock.sendto("$MQJOY," + str(mq_a) + ","
+                              + str(mq_x) + ","
+                              + str(mq_y) + ","
+                              + str(mq_s) + ",*\n", (UDP_IP, UDP_PORT))
+        if tx_page == 'joy_page':
+            sio.emit('my_response', {'data': dict_out}, namespace='/test')
+        eventlet.sleep(0.1)
 
 def quad_response_parser(data):
     temp = data.split(',')
@@ -61,22 +82,25 @@ def quad_response_parser(data):
     return dict_out
 
 
-def tst_udp_server():
-    global tx_flag
+def tx_udp_server():
+    global tx_flag, tx_rate
     while True:
         if tx_flag:
             sock.sendto("$MQRPY*\n", (UDP_IP, UDP_PORT))
-        eventlet.sleep(0.5)
+        eventlet.sleep(tx_rate)
 
-def background_thread():
+def rec_udp_server():
     """Example of how to send server generated events to clients."""
+    global tx_page
     count = 0
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         dict_out = quad_response_parser(data)
         count += 1
         print "received message:", data, dict_out
-        sio.emit('my_response', {'data': dict_out}, namespace='/test')
+        if tx_page == 'plot_page':
+            sio.emit('my_response', {'data': dict_out}, namespace='/test')
+
 
 @app.route('/')
 def index():
@@ -89,7 +113,7 @@ def cube():
     return render_template('cube.html')
 
 @app.route('/joy')
-def cube():
+def joy():
     '''View test index html.'''
     return render_template('joy.html')
 
@@ -108,10 +132,11 @@ def three():
     '''View test index html.'''
     return app.send_static_file('Three.js')
 
+
 @sio.on('connect', namespace='/test')
 def test_connect(sid, environ):
     print "Socket Connected"
-    sio.emit('my response', {'data': 'Connected', 'count': 0}, room=sid, namespace='/test')
+    sio.emit('my_response', {'data': 'Connected', 'count': 0}, room=sid, namespace='/test')
 
 @sio.on('disconnect', namespace='/test')
 def test_disconnect(sid):
@@ -119,7 +144,7 @@ def test_disconnect(sid):
 
 @sio.on('my_event', namespace='/test')
 def test_message(sid, message):
-    global tx_flag
+    global tx_flag, tx_rate, tx_page
     print "Received socket msg", message
     if message['data'] == 'toggle_tx':
         if tx_flag:
@@ -127,6 +152,12 @@ def test_message(sid, message):
         else:
             tx_flag = True
         print "Toggling  UDP Tx to: ", tx_flag
+    elif message['data'] == 'rate_tx':
+         tx_rate = message['rate']
+    elif message['data'] == 'plot_page':
+        tx_page = 'plot_page'
+    elif message['data'] == 'joy_page':
+        tx_page = 'joy_page'
     sio.emit('my_response', {'data': message['data']}, room=sid, namespace='/test')
 
 if __name__ == '__main__':
@@ -142,11 +173,12 @@ if __name__ == '__main__':
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("0.0.0.0", UDP_PORT))
 
-    udp_inc_ser = threading.Thread(target=background_thread, args=())
+    udp_inc_ser = threading.Thread(target=rec_udp_server, args=())
     udp_inc_ser.daemon = True
     udp_inc_ser.start()
 
-    eventlet.spawn(tst_udp_server)
+    eventlet.spawn(tx_udp_server)
+    eventlet.spawn(joy_event_server)
 
     #try:
     eventlet.wsgi.server(eventlet.listen(('', 8080)), app)
