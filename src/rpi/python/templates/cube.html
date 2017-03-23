@@ -42,9 +42,9 @@
             }
 
             function rotateCube() {
-                cube.rotation.x -= roll;
-                cube.rotation.y -= pitch;
-                cube.rotation.z -= yaw;
+                cube.rotation.x = roll * (Math.PI/180);
+                cube.rotation.y = pitch * (Math.PI/180);
+                cube.rotation.z = yaw * (Math.PI/180);
             }
 
             function render() {
