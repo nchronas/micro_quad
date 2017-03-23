@@ -109,13 +109,15 @@ void packet_response_handler(int cmd, char *buf) {
     case REQ_RPY:
 
            get_rpy(&quad_r, &quad_p, &quad_y, &quad_h);
+           //char outstr[15];
 
-           sprintf(buf, "$MQRPY,%d,%f,%f,%f,%f,*", \
+  //dtostrf(f_val,7, 3, outstr);
+           sprintf(buf, "$MQRPY,%d,%d,%d,%d,%d,*", \
               t_loop_2 - t_loop_1, \
-              quad_r, \
-              quad_p, \
-              quad_y, \
-              quad_h \
+              (int)quad_r, \
+              (int)quad_p, \
+              (int)quad_y, \
+              (int)quad_h \
              );
            break;
 
@@ -160,7 +162,7 @@ void packet_response_handler(int cmd, char *buf) {
            break;
 
     case REQ_NOP:
-           buf[0] = 0;
+           sprintf(buf, "$MQNOP*");
            break;
 
     default: sprintf(buf, "$MQERR*");
@@ -180,18 +182,19 @@ void comms_check_new_packet_arrival() {
     }
     Serial.printf("UDP packet contents: %s\n", incomingPacket);
 
-    int cmd = 0;
-    incoming_packet_parser(incomingPacket, len, &cmd);
-    packet_response_handler(cmd, responsePacket);
-
     rpi_IP   = Udp.remoteIP();
     rpi_Port = Udp.remotePort();
     rpi_last_connection = millis();
 
+    int cmd = 0;
+    incoming_packet_parser(incomingPacket, len, &cmd);
+    packet_response_handler(cmd, responsePacket);
+
     // send back a reply, to the IP address and port we got the packet from
     Udp.beginPacket(rpi_IP, rpi_Port);
-    Udp.write(responsePacket);
+    Udp.write(responsePacket); //"$MQRPY,1,2,3,4,5,*"
     Udp.endPacket();
+
   }
 }
 
