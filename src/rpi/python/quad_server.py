@@ -22,30 +22,31 @@ app.debug = True
 app.wsgi_app = socketio.Middleware(sio, app.wsgi_app)
 app.config['SECRET_KEY'] = 'secret!'
 
+pygame.init()
+size = [1, 1]
+screen = pygame.display.set_mode(size)
+
+pygame.joystick.init()
 controller = pygame.joystick.Joystick(0)
 controller.init()
 
 tx_flag = False
 
-def you_event_server():
+def joy_event_server():
+g
+    # Left hat
+    AXIS_X = 0
+    AXIS_Y = 1
+
     while True:
-        axis[AXIS_X] = -1
-        axis[AXIS_Y] = -1
+        pygame.event.get()
+        rot_x = controller.get_axis( AXIS_X )
+        rot_y = controller.get_axis( AXIS_Y )
 
-        # retrieve any events ...
-        for event in pygame.event.get():
-            if event.type == pygame.JOYAXISMOTION:
-                axis[event.axis] = round(event.value,2)
-            elif event.type == pygame.JOYBUTTONDOWN:
-                button[event.button] = True
-            elif event.type == pygame.JOYBUTTONUP:
-                button[event.button] = False
-
-        rot_x = axis[AXIS_X]
-        rot_y = axis[AXIS_Y]
-
+        #controller.get_button( 1 ) # X
         dict_out = { 'joy_x' : rot_x, 'joy_y' : rot_y}
 
+        print "Joystick: ", dict_out
         sio.emit('my response', {'data': dict_out}, room=sid, namespace='/test')
         eventlet.sleep(0.5)
 
