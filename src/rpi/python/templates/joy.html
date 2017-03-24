@@ -19,8 +19,8 @@
                     text: "Live Random Data"
                 },
                 axisY:{
-                    minimum: -1,
-                    maximum:  1,
+                    minimum: -1024,
+                    maximum:  1024,
                 },          
                 data: [{
                     showInLegend: true,
@@ -89,12 +89,16 @@
             // These accept data from the user and send it to the server in a
             // variety of ways
             $('form#emit').submit(function(event) {
-                socket.emit('my_event', {data: $('#emit_data').val()});
+                $('#reversed').checked 
+                socket.emit('my_event', {data: 'joy_config',
+                                         min_alt: $('#alt_min').val(),
+                                         max_alt: $('#alt_max').val(),
+                                         rev_alt: $('#alt_rev').checked });
                 return false;
             });
 
-            $('form#tx_rpy').submit(function(event) {
-                socket.emit('my_event', {data: 'toggle_tx'});
+            $('form#joy_alt').submit(function(event) {
+                socket.emit('my_event', {data: 'config_joy_req'});
                 return false;
             });
         });
@@ -106,11 +110,13 @@
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Send:</h2>
     <form id="emit" method="POST" action='#'>
-        <input type="text" name="emit_data" id="emit_data" placeholder="Message">
-        <input type="submit" value="Echo">
+        <input type="text" id="alt_min" placeholder="Min Alt">
+        <input type="text" id="alt_max" placeholder="Max Alt">
+        Reversed <input type="checkbox" id="alt_rev" value="Bike">
+        <input type="submit" value="Set config">
     </form>
-    <form id="tx_rpy" method="POST" action="#">
-        <input type="submit" value="tx_rpy">
+    <form id="joy_alt" method="POST" action="#">
+        <input type="submit" value="Req config">
     </form>
     <div id="chartContainer" style="height: 300; width: 50%;"></div>
     <h2>Receive:</h2>

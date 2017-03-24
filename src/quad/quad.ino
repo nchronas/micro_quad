@@ -6,11 +6,6 @@
 #include <Adafruit_Sensor.h>  // not used in this demo but required!
 #include "config.h"
 
-#define M1_PIN 12
-#define M2_PIN 13
-#define M3_PIN 14
-#define M4_PIN 15
-
 char lsm_data[100];
 
 unsigned int rpi_IP = 0, rpi_Port = 0;
@@ -42,11 +37,7 @@ void setup()
 
   imu_init();
   
-  //pwm motor init
-  analogWrite(M1_PIN, 0);
-  analogWrite(M2_PIN, 0);
-  analogWrite(M3_PIN, 0);
-  analogWrite(M4_PIN, 0);
+  motors_init();
 
   t_loop_2 = millis();
   tx_rate_cnt = t_loop_2;
@@ -60,11 +51,7 @@ void loop()
 
   get_rpy(&quad_r, &quad_p, &quad_y, &quad_h);
 
-  //pwm motor test
-  analogWrite(M1_PIN, ctrl_data.alt);
-  analogWrite(M2_PIN, ctrl_data.alt);
-  analogWrite(M3_PIN, ctrl_data.alt);
-  analogWrite(M4_PIN, ctrl_data.alt);
+  motor_mixing();
 
   comms_check_new_packet_arrival();
 

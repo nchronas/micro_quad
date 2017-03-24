@@ -8,8 +8,9 @@ import socket
 from flask import Flask, render_template
 import socketio
 from time import sleep
-import pygame
 import eventlet.wsgi
+
+from joy import get_joy_readings
 
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -22,13 +23,6 @@ app.debug = True
 app.wsgi_app = socketio.Middleware(sio, app.wsgi_app)
 app.config['SECRET_KEY'] = 'secret!'
 
-pygame.init()
-size = [1, 1]
-screen = pygame.display.set_mode(size)
-
-pygame.joystick.init()
-controller = pygame.joystick.Joystick(0)
-controller.init()
 
 tx_flag = False
 tx_rate = 0.1
@@ -38,37 +32,17 @@ tx_page = ''
 def joy_event_server():
     global tx_page
 
-    # Left stick
-    AXIS_A = 1
-
-    #right stick
-    AXIS_X = 2
-    AXIS_Y = 3
-
-    BUT_ST = 4
-
     while True:
-        pygame.event.get()
-        mq_a = controller.get_axis( AXIS_A )
-        mq_x = controller.get_axis( AXIS_X )
-        mq_y = controller.get_axis( AXIS_Y )
+        
+        dict_out = get_joy_readings()
 
-        mq_s = controller.get_button( BUT_ST ) # X
-
-        dict_out = { 'joy_a' : mq_a,
-                     'joy_x' : mq_x, 
-                     'joy_y' : mq_y, 
-                     'joy_s' : mq_s }
-
-        #normalize()
-
-        print "Joystick: ", dict_out
-        sock.sendto("$MQJOY," + str(mq_a) + ","
-                              + str(mq_x) + ","
-                              + str(mq_y) + ","
-                              + str(mq_s) + ",*\n", (UDP_IP, UDP_PORT))
+        sock.sendto("$MQJOY," + str(dict_out['joy_a']) + ","
+                              + str(dict_out['joy_x']) + ","
+                              + str(dict_out['joy_y']) + ","
+                              + str(dict_out['joy_s']) + ",*\n", (UDP_IP, UDP_PORT))
         if tx_page == 'joy_page':
             sio.emit('my_response', {'data': dict_out}, namespace='/test')
+        
         eventlet.sleep(0.1)
 
 def quad_response_parser(data):
